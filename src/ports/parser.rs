@@ -1,4 +1,4 @@
-use crate::domain::{CurrencyParseError, DailyForexRate};
+use crate::domain::DailyForexRate;
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -9,12 +9,6 @@ pub enum ParserError {
     CurrencyParseFailed,
     BuyingPriceParseFailed,
     SellingPriceParseFailed,
-}
-
-impl From<CurrencyParseError> for ParserError {
-    fn from(_: CurrencyParseError) -> Self {
-        ParserError::CurrencyParseFailed
-    }
 }
 
 pub trait Parser {

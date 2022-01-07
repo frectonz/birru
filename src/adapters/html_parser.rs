@@ -5,12 +5,17 @@ use crate::{
     ports::{Parser, ParserError},
 };
 
+const TD_SELECTOR: &str = "td";
+const TABLE_SELECTOR: &str = "body > table > tbody > tr";
+
+const SEPARATOR: &str = ";";
+
 pub struct HtmlParser;
 
 impl Parser for HtmlParser {
     fn parse_daily_forex_rate(data: String) -> DailyForexRate {
         let table_selector =
-            Selector::parse("body > table > tbody > tr").expect("Failed to parse <table> selector");
+            Selector::parse(TABLE_SELECTOR).expect("Failed to parse <table> selector");
 
         let document = Html::parse_document(&data);
         let tables = document.select(&table_selector).collect::<Vec<_>>();
@@ -26,46 +31,35 @@ impl Parser for HtmlParser {
 }
 
 fn parse_forex_rate(trs: &ElementRef) -> Result<ForexRate, ParserError> {
-    let td_selector = Selector::parse("td").expect("Failed to parse <td> selector");
+    use ParserError::*;
+
+    let td_selector = Selector::parse(TD_SELECTOR).expect("Failed to parse <td> selector");
 
     let mut tds = trs.select(&td_selector).skip(1);
 
-    let currency = tds
-        .next()
-        .map(|c| c.inner_html())
-        .ok_or(ParserError::NoCurrencyValue)?;
-    let buying = tds
-        .next()
-        .map(|b| b.inner_html())
-        .ok_or(ParserError::NoBuyingValue)?;
-    let selling = tds
-        .next()
-        .map(|b| b.inner_html())
-        .ok_or(ParserError::NoSellingValue)?;
+    let currency = tds.next().map(|c| c.inner_html()).ok_or(NoCurrencyValue)?;
+    let buying = tds.next().map(|b| b.inner_html()).ok_or(NoBuyingValue)?;
+    let selling = tds.next().map(|b| b.inner_html()).ok_or(NoSellingValue)?;
 
     let currency = currency
-        .split(";")
-        .last()
-        .map(|c| c.trim())
-        .ok_or(ParserError::CurrencyParseFailed)?;
-    let buying = buying
-        .split(";")
-        .last()
-        .map(|b| b.trim())
-        .ok_or(ParserError::BuyingPriceParseFailed)?;
-    let selling = selling
-        .split(";")
+        .split(SEPARATOR)
         .last()
         .map(str::trim)
-        .ok_or(ParserError::SellingPriceParseFailed)?;
-
-    let currency = currency.parse::<Currency>()?;
+        .ok_or(CurrencyParseFailed)?;
     let buying = buying
-        .parse::<f64>()
-        .or(Err(ParserError::BuyingPriceParseFailed))?;
+        .split(SEPARATOR)
+        .last()
+        .map(str::trim)
+        .ok_or(BuyingPriceParseFailed)?;
     let selling = selling
-        .parse::<f64>()
-        .or(Err(ParserError::SellingPriceParseFailed))?;
+        .split(SEPARATOR)
+        .last()
+        .map(str::trim)
+        .ok_or(SellingPriceParseFailed)?;
+
+    let currency = currency.parse::<Currency>().or(Err(CurrencyParseFailed))?;
+    let buying = buying.parse::<f64>().or(Err(BuyingPriceParseFailed))?;
+    let selling = selling.parse::<f64>().or(Err(SellingPriceParseFailed))?;
 
     Ok(ForexRate::new(currency, buying, selling))
 }
