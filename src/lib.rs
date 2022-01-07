@@ -1,3 +1,3 @@
-pub mod entities;
-pub mod impls;
-pub mod traits;
+pub mod adapters;
+pub mod domain;
+pub mod ports;
