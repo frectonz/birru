@@ -1,4 +1,5 @@
 use crate::domain::DailyForexRate;
+use async_trait::async_trait;
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -11,6 +12,7 @@ pub enum ParserError {
     SellingPriceParseFailed,
 }
 
+#[async_trait]
 pub trait Parser {
-    fn parse_daily_forex_rate(data: String) -> DailyForexRate;
+    async fn parse_daily_forex_rate(data: String) -> DailyForexRate;
 }

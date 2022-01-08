@@ -1,38 +1,42 @@
-use scraper::{ElementRef, Html, Selector};
-
 use crate::{
     domain::{Currency, DailyForexRate, ForexRate},
     ports::{Parser, ParserError},
 };
+use async_trait::async_trait;
+use scraper::{ElementRef, Html, Selector};
 
 const TD_SELECTOR: &str = "td";
 const TABLE_SELECTOR: &str = "body > table > tbody > tr";
-
 const SEPARATOR: &str = ";";
 
 pub struct HtmlParser;
 
+#[async_trait]
 impl Parser for HtmlParser {
-    fn parse_daily_forex_rate(data: String) -> DailyForexRate {
-        let table_selector =
-            Selector::parse(TABLE_SELECTOR).expect("Failed to parse <table> selector");
+    async fn parse_daily_forex_rate(data: String) -> DailyForexRate {
+        let handle = tokio::spawn(async move {
+            let table_selector =
+                Selector::parse(TABLE_SELECTOR).expect("Failed to parse <table> selector");
+            let document = Html::parse_document(&data);
+            let tables = document.select(&table_selector).collect::<Vec<_>>();
 
-        let document = Html::parse_document(&data);
-        let tables = document.select(&table_selector).collect::<Vec<_>>();
+            let rates = tables
+                .iter()
+                .skip(1)
+                .map(parse_forex_rate)
+                .filter(|r| r.is_ok())
+                .map(|r| r.unwrap())
+                .collect::<Vec<_>>();
 
-        let rates = tables
-            .iter()
-            .skip(1)
-            .map(parse_forex_rate)
-            .collect::<Vec<_>>();
+            DailyForexRate::new(rates)
+        });
 
-        DailyForexRate::new(rates)
+        handle.await.expect("Failed to `join` async handle")
     }
 }
 
 fn parse_forex_rate(trs: &ElementRef) -> Result<ForexRate, ParserError> {
     use ParserError::*;
-
     let td_selector = Selector::parse(TD_SELECTOR).expect("Failed to parse <td> selector");
 
     let mut tds = trs.select(&td_selector).skip(1);

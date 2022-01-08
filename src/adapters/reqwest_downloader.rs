@@ -1,7 +1,6 @@
+use crate::ports::{DownloadError, Downloader};
 use async_trait::async_trait;
 use reqwest::{get, Error as ReqwestError};
-
-use crate::ports::{DownloadError, Downloader};
 
 const DAILY_FOREX_RATE: &str = "https://market.nbebank.com/market/banks/";
 
