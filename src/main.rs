@@ -5,7 +5,6 @@ use birru::{
     ports::{Downloader, Parser},
 };
 use std::{env, net::SocketAddr};
-use tokio::sync::oneshot;
 
 #[tokio::main]
 async fn main() {
@@ -16,18 +15,11 @@ async fn main() {
     let service = app.into_make_service();
     let server = Server::bind(&addr).serve(service);
 
-    let (tx, rx) = oneshot::channel::<()>();
-    let graceful = server.with_graceful_shutdown(async {
-        rx.await.ok();
-    });
-
     println!("Listening on http://{}", addr);
 
-    if let Err(e) = graceful.await {
-        eprintln!("server error: {}", e);
+    if let Err(e) = server.await {
+        println!("server error: {}", e);
     }
-
-    let _ = tx.send(());
 }
 
 fn get_port() -> u16 {
