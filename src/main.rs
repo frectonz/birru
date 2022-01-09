@@ -1,10 +1,11 @@
-use axum::{routing::get, Json, Router};
+use axum::{routing::get, Json, Router, Server};
 use birru::{
     adapters::{HtmlParser, ReqwestDownloader},
     domain::DailyForexRate,
     ports::{Downloader, Parser},
 };
 use std::{env, net::SocketAddr};
+use tokio::sync::oneshot;
 
 #[tokio::main]
 async fn main() {
@@ -13,12 +14,26 @@ async fn main() {
     let app = Router::new().route("/", get(get_daily_forex_rate));
 
     let service = app.into_make_service();
-    println!("{:?}", service);
-    axum::Server::bind(&addr)
-        .serve(service)
-        .await
-        .expect("Failed to serve...");
+    let server = Server::bind(&addr).serve(service);
+
+    let (tx, rx) = oneshot::channel::<()>();
+    let graceful = server.with_graceful_shutdown(async {
+        rx.await.ok();
+    });
+
     println!("Listening on http://{}", addr);
+
+    if let Err(e) = graceful.await {
+        eprintln!("server error: {}", e);
+    }
+
+    let _ = tx.send(());
+}
+
+fn get_port() -> u16 {
+    env::var("PORT")
+        .map(|p| p.parse::<_>().expect("Failed to parse port"))
+        .unwrap_or(3000)
 }
 
 async fn get_daily_forex_rate() -> Json<DailyForexRate> {
@@ -28,10 +43,4 @@ async fn get_daily_forex_rate() -> Json<DailyForexRate> {
     let rates = HtmlParser::parse_daily_forex_rate(data).await;
     println!("Parsed rates:\n{}", rates);
     Json(rates)
-}
-
-fn get_port() -> u16 {
-    env::var("PORT")
-        .map(|p| p.parse::<_>().expect("Failed to parse port"))
-        .unwrap_or(3000)
 }
