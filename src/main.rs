@@ -12,10 +12,12 @@ async fn main() {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let app = Router::new().route("/", get(get_daily_forex_rate));
 
+    let service = app.into_make_service();
+    println!("{:?}", service);
     axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        .serve(service)
         .await
-        .unwrap();
+        .expect("Failed to serve...");
     println!("Listening on http://{}", addr);
 }
 
