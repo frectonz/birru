@@ -12,11 +12,11 @@ async fn main() {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let app = Router::new().route("/", get(get_daily_forex_rate));
 
-    println!("Listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
+    println!("Listening on http://{}", addr);
 }
 
 async fn get_daily_forex_rate() -> Json<DailyForexRate> {
