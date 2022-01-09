@@ -9,7 +9,7 @@ use std::{env, net::SocketAddr};
 #[tokio::main]
 async fn main() {
     let port = get_port();
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let app = Router::new().route("/", get(get_daily_forex_rate));
 
     let service = app.into_make_service();
