@@ -33,6 +33,5 @@ async fn get_daily_forex_rate() -> Json<DailyForexRate> {
         .await
         .unwrap();
     let rates = HtmlParser::parse_daily_forex_rate(data).await;
-    println!("Parsed rates:\n{}", rates);
     Json(rates)
 }
