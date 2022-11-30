@@ -14,7 +14,7 @@ pub struct HtmlParser;
 #[async_trait]
 impl Parser for HtmlParser {
     async fn parse_daily_forex_rate(data: String) -> DailyForexRate {
-        let handle = tokio::spawn(async move {
+        let handle = tokio::task::spawn_blocking(move || {
             let table_selector =
                 Selector::parse(TABLE_SELECTOR).expect("Failed to parse <table> selector");
             let document = Html::parse_document(&data);
