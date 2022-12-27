@@ -24,8 +24,7 @@ impl Parser for HtmlParser {
                 .iter()
                 .skip(1)
                 .map(parse_forex_rate)
-                .filter(|r| r.is_ok())
-                .map(|r| r.unwrap())
+                .filter_map(|r| r.ok())
                 .collect::<Vec<_>>();
 
             DailyForexRate::new(rates)
