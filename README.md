@@ -2,11 +2,22 @@
 
 A REST server that returns data related to Ethiopian forex exchange rates.
 
-The api is hosted at [https://birru.up.railway.app/](https://birru.up.railway.app/). It has a single endpoint that returns the forex rates in JSON format.
-
 ## Usage
 
-`GET https://birru.up.railway.app/`
+Running the server
+
+```bash
+$ cargo run
+Listening on http://0.0.0.0:3000
+```
+
+Testing with [httpie](https://httpie.io/).
+
+```bash
+$ http localhost:3000
+```
+
+## Sample Response
 
 ```json
 [
