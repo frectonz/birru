@@ -24,10 +24,18 @@
           inherit system overlays;
         };
 
+        mainBuildInputs = with pkgs; [
+          openssl
+          pkg-config
+        ];
+
         craneLib = crane.lib.${system};
         src = craneLib.cleanCargoSource ./.;
 
-        commonArgs = { inherit src; };
+        commonArgs = {
+          inherit src;
+          buildInputs = mainBuildInputs;
+        };
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
         bin = craneLib.buildPackage (commonArgs // {
@@ -42,14 +50,11 @@
         };
 
         devShells.default = mkShell {
-          buildInputs = [
+          buildInputs = mainBuildInputs ++ [
             rust-bin.stable.latest.default
             rust-analyzer
             nil
             httpie
-
-            openssl
-            pkg-config
           ];
         };
 
